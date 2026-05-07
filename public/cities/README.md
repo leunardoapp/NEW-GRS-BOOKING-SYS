@@ -1,38 +1,25 @@
-# 📸 تصاویر شهرها
+# City Images Folder
 
-## فایل‌های مورد نیاز
+Place your city images in this folder with the following filenames:
 
-لطفاً تصاویر زیر را در این پوشه قرار دهید:
+## Required Images (WebP format recommended, 800x600px, <200KB):
 
-| نام فایل | شهر | توضیحات |
-|----------|-----|---------|
-| `tehran.webp` | تهران | پیشنهاد: برج میلاد یا کاخ گلستان |
-| `isfahan.webp` | اصفهان | پیشنهاد: میدان نقش جهان |
-| `shiraz.webp` | شیراز | پیشنهاد: مسجد نصیرالملک یا تخت جمشید |
-| `mashhad.webp` | مشهد | پیشنهاد: حرم امام رضا |
-| `tabriz.webp` | تبریز | پیشنهاد: بازار تاریخی تبریز |
-| `yazd.webp` | یزد | پیشنهاد: میدان امیرچخماق |
+- `tehran.webp` - Tehran (پیشنهاد: برج میلاد)
+- `isfahan.webp` - Isfahan (پیشنهاد: میدان نقش جهان)
+- `shiraz.webp` - Shiraz (پیشنهاد: مسجد نصیرالملک)
+- `mashhad.webp` - Mashhad (پیشنهاد: حرم امام رضا)
+- `tabriz.webp` - Tabriz (پیشنهاد: بازار تاریخی تبریز)
+- `yazd.webp` - Yazd (پیشنهاد: میدان امیرچخماق)
 
-## مشخصات فنی تصاویر
+## Image Specifications:
+- Format: WebP (recommended) or JPG/PNG
+- Dimensions: 800x600 pixels (4:3 aspect ratio)
+- File size: Under 200KB for optimal loading
+- Quality: High quality but optimized for web
 
-- **فرمت**: WebP (توصیه می‌شود) یا JPG
-- **اندازه حداقل**: 400×300 پیکسل
-- **اندازه توصیه شده**: 800×600 پیکسل
-- **نسبت تصویر**: 4:3
-- **حجم فایل**: کمتر از 200KB برای بهینگی
+## Example Sources for Free Images:
+- Unsplash.com
+- Pexels.com
+- Pixabay.com
 
-## منابع رایگان برای دانلود تصاویر
-
-می‌توانید از سایت‌های زیر تصاویر رایگان دانلود کنید:
-
-- [Unsplash](https://unsplash.com/)
-- [Pexels](https://www.pexels.com/)
-- [Pixabay](https://pixabay.com/)
-
-## نکته مهم
-
-اگر تصاویر موجود نباشند، سیستم به صورت خودکار یک پس‌زمینه گرادینت با آیکون مکان نمایش می‌دهد.
-
----
-
-**مسیر پوشه**: `/workspace/public/cities/`
+Search for landmarks of each city to find appropriate images.

@@ -114,6 +114,68 @@ export const payments = pgTable('payments', {
   verifiedAt: timestamp('verified_at', { withTimezone: true }),
 });
 
+// ==================== HOTEL REVIEWS TABLE ====================
+
+export const hotelReviews = pgTable('hotel_reviews', {
+  id: serial('id').primaryKey(),
+  
+  // Relations
+  userId: integer('user_id').notNull().references(() => users.id),
+  propertyId: integer('property_id').notNull(),
+  reservationId: integer('reservation_id').references(() => reservations.id),
+  
+  // Review Content
+  rating: integer('rating').notNull(), // 1-5
+  title: varchar('title', { length: 200 }),
+  comment: text('comment').notNull(),
+  
+  // Stay Information
+  stayedAtProperty: boolean('stayed_at_property').notNull().default(false),
+  stayDate: date('stay_date'),
+  
+  // Moderation
+  isApproved: boolean('is_approved').notNull().default(true),
+  isVerified: boolean('is_verified').notNull().default(false),
+  
+  // Helpful votes
+  helpfulCount: integer('helpful_count').notNull().default(0),
+  
+  // Timestamps
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ==================== HOTEL REVIEWS TABLE ====================
+
+export const hotelReviews = pgTable('hotel_reviews', {
+  id: serial('id').primaryKey(),
+  
+  // Relations
+  userId: integer('user_id').notNull().references(() => users.id),
+  propertyId: integer('property_id').notNull(),
+  reservationId: integer('reservation_id').references(() => reservations.id),
+  
+  // Review Content
+  rating: integer('rating').notNull(), // 1-5
+  title: varchar('title', { length: 200 }),
+  comment: text('comment').notNull(),
+  
+  // Stay Information
+  stayedAtProperty: boolean('stayed_at_property').notNull().default(false),
+  stayDate: date('stay_date'),
+  
+  // Moderation
+  isApproved: boolean('is_approved').notNull().default(true),
+  isVerified: boolean('is_verified').notNull().default(false),
+  
+  // Helpful votes
+  helpfulCount: integer('helpful_count').notNull().default(0),
+  
+  // Timestamps
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 // ==================== SYSTEM CONFIG TABLE ====================
 
 export const systemConfig = pgTable('system_config', {
@@ -189,6 +251,9 @@ export type NewReservation = typeof reservations.$inferInsert;
 
 export type Payment = typeof payments.$inferSelect;
 export type NewPayment = typeof payments.$inferInsert;
+
+export type HotelReview = typeof hotelReviews.$inferSelect;
+export type NewHotelReview = typeof hotelReviews.$inferInsert;
 
 export type SystemConfig = typeof systemConfig.$inferSelect;
 export type NewSystemConfig = typeof systemConfig.$inferInsert;
