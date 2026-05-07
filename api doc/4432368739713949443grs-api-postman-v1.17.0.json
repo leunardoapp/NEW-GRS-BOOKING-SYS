@@ -1,0 +1,984 @@
+{
+	"info": {
+		"_postman_id": "e0ce3e8f-6e38-48d1-8fe7-a676fcdcf6bc",
+		"name": "GRS Channel",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Api",
+			"item": [
+				{
+					"name": "Reserves",
+					"item": [
+						{
+							"name": "ReserveProperty",
+							"item": [
+								{
+									"name": "Resreve City Summery",
+									"request": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Client-Token",
+												"value": "{{Client-Token}}",
+												"type": "text"
+											},
+											{
+												"key": "Auth-Token",
+												"value": "{{Auth-Token}}",
+												"type": "text"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/json",
+												"type": "text"
+											}
+										],
+										"url": "{{host_url}}/v1/reserves-properties/reserve-city-summary"
+									},
+									"response": []
+								}
+							],
+							"protocolProfileBehavior": {},
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "Reserve Activities",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Client-Token",
+										"value": "{{Client-Token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": "{{host_url}}/v1/reserves/070395269/activities"
+							},
+							"response": []
+						},
+						{
+							"name": "Create Reserve Activity",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Client-Token",
+										"value": "{{Client-Token}}"
+									},
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"description\" : \"test\"\n}"
+								},
+								"url": "{{host_url}}/v1/reserves/070395269/activities/create"
+							},
+							"response": []
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "users",
+					"item": [
+						{
+							"name": "Users List",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Client-Token",
+										"value": "{{Client-Token}}"
+									},
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{host_url}}/v1/users",
+									"host": [
+										"{{host_url}}"
+									],
+									"path": [
+										"v1",
+										"users"
+									],
+									"query": [
+										{
+											"key": "filters[0][name]",
+											"value": "role_id",
+											"description": "allowed filter keys role_id,full_name,mobile,email,disabled,telegram_chat_id,is_verified_telegram,created_at,updated_at",
+											"disabled": true
+										},
+										{
+											"key": "filters[0][value]",
+											"value": "7",
+											"disabled": true
+										},
+										{
+											"key": "filters[0][operand]",
+											"value": "IsEqualTo",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create User",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Client-Token",
+										"value": "{{Client-Token}}"
+									},
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n\t\"role_id\":7,\r\n\t\"full_name\":\"مهدی حسینی\",\r\n\t\"mobile\":\"09120701511\",\r\n\t\"email\": null,\r\n\t\"role_id\" : 1,\r\n\t\"password\":\"75555555\"\r\n}"
+								},
+								"url": {
+									"raw": "{{host_url}}/v1/users/create",
+									"host": [
+										"{{host_url}}"
+									],
+									"path": [
+										"v1",
+										"users",
+										"create"
+									],
+									"query": [
+										{
+											"key": "offset",
+											"value": null,
+											"disabled": true
+										},
+										{
+											"key": "count",
+											"value": null,
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Roles",
+					"item": [
+						{
+							"name": "Roles List",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Client-Token",
+										"value": "{{Client-Token}}"
+									},
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{host_url}}/v1/roles",
+									"host": [
+										"{{host_url}}"
+									],
+									"path": [
+										"v1",
+										"roles"
+									],
+									"query": [
+										{
+											"key": "offset",
+											"value": null,
+											"disabled": true
+										},
+										{
+											"key": "count",
+											"value": null,
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Transactions",
+					"item": [
+						{
+							"name": "payment request",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Client-Token",
+										"value": "{{Client-Token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\t\"amount\" : 20000,\n\t\"payment_method\" : \"credit\",\n\t\"redirect_url\" :\"www.google.com\"\n}"
+								},
+								"url": {
+									"raw": "{{host_url}}/v1/receipts/payment-request",
+									"host": [
+										"{{host_url}}"
+									],
+									"path": [
+										"v1",
+										"receipts",
+										"payment-request"
+									],
+									"query": [
+										{
+											"key": "Client_Token",
+											"value": "{{Client-Token}}",
+											"disabled": true
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Transactions List",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Client-Token",
+										"value": "{{Client-Token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"url": "{{host_url}}/v1/accounting-transactions/"
+							},
+							"response": []
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "Cities List",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Client-Token",
+								"value": "{{Client-Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{host_url}}/v1/cities",
+							"host": [
+								"{{host_url}}"
+							],
+							"path": [
+								"v1",
+								"cities"
+							],
+							"query": [
+								{
+									"key": "offset",
+									"value": null,
+									"disabled": true
+								},
+								{
+									"key": "count",
+									"value": null,
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Facilities List",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Client-Token",
+								"value": "{{Client-Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{host_url}}/v1/facilities",
+							"host": [
+								"{{host_url}}"
+							],
+							"path": [
+								"v1",
+								"facilities"
+							],
+							"query": [
+								{
+									"key": "offset",
+									"value": null,
+									"disabled": true
+								},
+								{
+									"key": "count",
+									"value": null,
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Properties List",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Client-Token",
+								"value": "{{Client-Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{host_url}}/v1/properties?filters[0][operand]=IsEqualTo&filters[0][name]=id&filters[0][value]=740",
+							"host": [
+								"{{host_url}}"
+							],
+							"path": [
+								"v1",
+								"properties"
+							],
+							"query": [
+								{
+									"key": "filters[0][operand]",
+									"value": "IsEqualTo"
+								},
+								{
+									"key": "filters[0][name]",
+									"value": "id"
+								},
+								{
+									"key": "filters[0][value]",
+									"value": "740"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Property Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Client-Token",
+								"value": "{{Client-Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{host_url}}/v1/properties/740?filters[0][operand]=IsEqualTo&filters[0][name]=id&filters[0][value]=740",
+							"host": [
+								"{{host_url}}"
+							],
+							"path": [
+								"v1",
+								"properties",
+								"740"
+							],
+							"query": [
+								{
+									"key": "filters[0][operand]",
+									"value": "IsEqualTo"
+								},
+								{
+									"key": "filters[0][name]",
+									"value": "id"
+								},
+								{
+									"key": "filters[0][value]",
+									"value": "740"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Room Type List",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Client-Token",
+								"value": "{{Client-Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{host_url}}/v1/room-types?property_id=1416",
+							"host": [
+								"{{host_url}}"
+							],
+							"path": [
+								"v1",
+								"room-types"
+							],
+							"query": [
+								{
+									"key": "property_id",
+									"value": "1416"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Available Rooms",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Client-Token",
+								"value": "{{Client-Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{host_url}}/v1/available-rooms?property_id=1&check_in=2018-07-15&check_out=2019-08-15",
+							"host": [
+								"{{host_url}}"
+							],
+							"path": [
+								"v1",
+								"available-rooms"
+							],
+							"query": [
+								{
+									"key": "property_id",
+									"value": "1"
+								},
+								{
+									"key": "check_in",
+									"value": "2018-07-15",
+									"description": "yyyy-mm-dd"
+								},
+								{
+									"key": "check_out",
+									"value": "2019-08-15",
+									"description": "yyyy-mm-dd"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Suggestion",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Client-Token",
+								"value": "{{Client-Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{host_url}}/v1/suggestion?city_id=38&check_in=2019-03-20&check_out=2019-03-22&adults_count=1&children%5B0%5D=&property_id=740&filters[0][operand]=IsEqualTo&filters[0][name]=star&filters[0][value]=3",
+							"host": [
+								"{{host_url}}"
+							],
+							"path": [
+								"v1",
+								"suggestion"
+							],
+							"query": [
+								{
+									"key": "city_id",
+									"value": "38"
+								},
+								{
+									"key": "check_in",
+									"value": "2019-03-20"
+								},
+								{
+									"key": "check_out",
+									"value": "2019-03-22"
+								},
+								{
+									"key": "adults_count",
+									"value": "1"
+								},
+								{
+									"key": "children%5B0%5D",
+									"value": ""
+								},
+								{
+									"key": "property_id",
+									"value": "740"
+								},
+								{
+									"key": "filters[0][operand]",
+									"value": "IsEqualTo"
+								},
+								{
+									"key": "filters[0][name]",
+									"value": "star"
+								},
+								{
+									"key": "filters[0][value]",
+									"value": "3"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reserve",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Client-Token",
+								"value": "{{Client-Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{host_url}}/v1/reserve"
+					},
+					"response": []
+				},
+				{
+					"name": "Extended expired time",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Client-Token",
+								"value": "{{Client-Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{host_url}}/v1/extended-expired-time/112132460"
+					},
+					"response": []
+				},
+				{
+					"name": "Book",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Client-Token",
+								"value": "{{Client-Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"confirmation_code\": \"110694644\"\n}"
+						},
+						"url": "{{host_url}}/v1/book"
+					},
+					"response": []
+				},
+				{
+					"name": "Modify Reserve",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Client-Token",
+								"value": "{{Client-Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"property_id\": 1,\n  \"check_in\": \"2018-12-1\",\n  \"check_out\": \"2018-12-2\",\n  \"booker_first_name\": \"Saeed\",\n  \"booker_last_name\": \"Torabi\",\n  \"booker_phone\": \"09361963630\",\n  \"booker_email\": \"torabi@eghamat24.com\",\n  \"vehicle\": null,\n  \"vehicle_number\": null,\n  \"description\" : null,\n  \"rooms\": [\n    {\n      \"room_type_id\": 1,\n      \"rate_plan_id\": 1,\n      \"count\": 1,\n      \"adult_count\": 1,\n      \"children\": [],\n      \"guest_first_name\": \"kalb Saeed\",\n      \"guest_last_name\": \"Torabi\",\n      \"guest_phone\": \"09361963630\",\n      \"guest_email\": \"torabi@eghamat24.com\",\n      \"guest_national_code\": \"\",\t\t\n      \"guest_passport_number\": \"\",\n      \"guest_country_id\": null,\n      \"guest_city_id\": null,\n      \"guests\":[\n\t      \t{\n\t\t\t\t\"first_name\": \"Saeed\",\n\t\t\t\t\"last_name\": \"Torabi\",\n\t\t\t\t\"phone\": \"09361963630\",\n\t\t\t\t\"email\": \"torabi@eghamat24.com\",\n\t\t\t\t\"national_code\": \"\",\t\t\n\t\t\t\t\"passport_number\": \"\",\n\t\t\t\t\"country_id\": null,\n\t\t\t\t\"city_id\": null\n\t      \t}\n      \t]\n    }\n  ]\n}"
+						},
+						"url": "{{host_url}}/v1/modify/112943555"
+					},
+					"response": []
+				},
+				{
+					"name": "Request Reserve Service",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Client-Token",
+								"value": "{{Client-Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"transfer\",\n    \"data\": {\n        \"vehicle\": \"airplane\",\n        \"vehicle_number\": \"B9996\",\n        \"departure_time\": \"\",\n        \"arrival_time\": \"\",\n        \"passenger_phone\": \"+989124022012\",\n       \"description\": \"....\"\n    }\n}"
+						},
+						"url": "{{host_url}}/v1/request-service/1000102849277552"
+					},
+					"response": []
+				},
+				{
+					"name": "Accept Modify Reserve",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Client-Token",
+								"value": "{{Client-Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{host_url}}/v1/accept-modify/1000111550588"
+					},
+					"response": []
+				},
+				{
+					"name": "Cancel Modify Reserve",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Client-Token",
+								"value": "{{Client-Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{host_url}}/v1/cancel-modify/1000111550588"
+					},
+					"response": []
+				},
+				{
+					"name": "Cancel",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Client-Token",
+								"value": "{{Client-Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"confirmation_code\": \"120937290\"\n}"
+						},
+						"url": "{{host_url}}/v1/cancel"
+					},
+					"response": []
+				},
+				{
+					"name": "Accept cancel",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Client-Token",
+								"value": "{{Client-Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{host_url}}/v1/accept-cancel/100001112"
+					},
+					"response": []
+				},
+				{
+					"name": "Reject cancel",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Client-Token",
+								"value": "{{Client-Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": "{{host_url}}/v1/reject-cancel/120964053"
+					},
+					"response": []
+				},
+				{
+					"name": "Reserves List",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Client-Token",
+								"value": "{{Client-Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{host_url}}/v1/reserves?filters[0][value]=09122564119&filters[0][name]=booker_phone&filters[0][operand]=IsEqualTo",
+							"host": [
+								"{{host_url}}"
+							],
+							"path": [
+								"v1",
+								"reserves"
+							],
+							"query": [
+								{
+									"key": "filters[0][value]",
+									"value": "09122564119"
+								},
+								{
+									"key": "filters[0][name]",
+									"value": "booker_phone"
+								},
+								{
+									"key": "filters[0][operand]",
+									"value": "IsEqualTo"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reserve Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Client-Token",
+								"value": "{{Client-Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{host_url}}/v1/reserve-details?confirmation_code=112933957",
+							"host": [
+								"{{host_url}}"
+							],
+							"path": [
+								"v1",
+								"reserve-details"
+							],
+							"query": [
+								{
+									"key": "confirmation_code",
+									"value": "112933957"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Web Hook",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Client-Token",
+								"value": "{{Client-Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host_url}}/v1/web-hook"
+					},
+					"response": []
+				},
+				{
+					"name": "Set Web Hook",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Client-Token",
+								"value": "{{Client-Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"web_hook\": \"your address\"\n}"
+						},
+						"url": "{{host_url}}/v1/web-hook"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Client-Token",
+								"value": "{{Client-Token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": "{{host_url}}/v1/profile"
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		}
+	],
+	"protocolProfileBehavior": {}
+}
