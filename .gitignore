@@ -8,12 +8,18 @@ build/
 .next/
 out/
 
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
 # Environment variables
 .env
 .env.local
 .env.*
 
-# IDE files
+# IDE specific
 .vscode/
 .idea/
 *.swp
@@ -22,53 +28,23 @@ out/
 # Logs
 *.log
 
-# Python cache
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# Temporary files
-*.tmp
-*.temp
-
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# Coverage reports
+# Coverage
 coverage/
 htmlcov/
 .coverage
 
-# Testing
+# Temporary files
+*.tmp
+.DS_Store
+Thumbs.db
+
+# MyPy
 .mypy_cache/
+
+# PyTest
 .pytest_cache/
-.nyc_output/
-coverage/
 
-# Runtime data
-.happypack/
-.tern-port
-
-# Local configuration
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Next.js
-.next/
-out/
-```
-
-Wait, let me reconsider the input more carefully. The added and modified files are all source code files (.md, .ts, .tsx) and there are no build artifacts, dependency directories, or temporary files in the changes. The current .gitignore appears to be empty based on the input.
-
-Actually, looking at this again - the current .gitignore content is not provided as empty, it's just showing as "###current .gitignore Content" without any actual content shown. The changes include only source files (.md, .ts, .tsx) and no build artifacts, dependencies, or temp files.
-
-Since only source/config files are being changed and no build artifacts, dependencies, or temp files are present in the change list, the output should be empty.
-
-```
-
-
+# Distribution / packaging
+*.egg-info/
+.Python
 ```
