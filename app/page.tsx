@@ -3,15 +3,16 @@ import { Hotel, Shield, Clock, Headphones, Star, MapPin, ChevronLeft } from 'luc
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { SearchForm } from '@/src/components/search-form';
+import Image from 'next/image';
 
 // Popular cities for quick access
 const POPULAR_CITIES = [
-  { id: 1, name: 'تهران', slug: 'tehran', image: '/cities/tehran.jpg' },
-  { id: 2, name: 'اصفهان', slug: 'isfahan', image: '/cities/isfahan.jpg' },
-  { id: 3, name: 'شیراز', slug: 'shiraz', image: '/cities/shiraz.jpg' },
-  { id: 4, name: 'مشهد', slug: 'mashhad', image: '/cities/mashhad.jpg' },
-  { id: 5, name: 'تبریز', slug: 'tabriz', image: '/cities/tabriz.jpg' },
-  { id: 6, name: 'یزد', slug: 'yazd', image: '/cities/yazd.jpg' },
+  { id: 1, name: 'تهران', slug: 'tehran', image: '/cities/tehran.webp' },
+  { id: 2, name: 'اصفهان', slug: 'isfahan', image: '/cities/isfahan.webp' },
+  { id: 3, name: 'شیراز', slug: 'shiraz', image: '/cities/shiraz.webp' },
+  { id: 4, name: 'مشهد', slug: 'mashhad', image: '/cities/mashhad.webp' },
+  { id: 5, name: 'تبریز', slug: 'tabriz', image: '/cities/tabriz.webp' },
+  { id: 6, name: 'یزد', slug: 'yazd', image: '/cities/yazd.webp' },
 ];
 
 const FEATURES = [
@@ -129,11 +130,27 @@ export default function HomePage() {
                 href={`/search?city_id=${city.id}`}
                 className="group"
               >
-                <Card className="overflow-hidden transition-all hover:shadow-lg hover:border-primary/30">
-                  <div className="relative h-32 bg-gradient-to-br from-primary/20 to-primary/5">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <MapPin className="h-8 w-8 text-primary/50" />
-                    </div>
+                <Card className="overflow-hidden transition-all hover:shadow-lg hover:border-primary/30 h-full">
+                  <div className="relative h-32 w-full overflow-hidden">
+                    <Image
+                      src={city.image}
+                      alt={city.name}
+                      fill
+                      className="object-cover transition-transform group-hover:scale-110"
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
+                      onError={(e) => {
+                        // Fallback to gradient if image not found
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent && !parent.querySelector('.fallback-bg')) {
+                          const fallback = document.createElement('div');
+                          fallback.className = 'fallback-bg absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center';
+                          fallback.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary/50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>';
+                          parent.appendChild(fallback);
+                        }
+                      }}
+                    />
                   </div>
                   <CardContent className="p-3 text-center">
                     <h3 className="font-semibold group-hover:text-primary transition-colors">
