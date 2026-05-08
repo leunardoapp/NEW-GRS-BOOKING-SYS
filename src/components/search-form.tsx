@@ -1,17 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, MapPin, Calendar, Users, Minus, Plus, X } from 'lucide-react';
+import { Search, MapPin, Calendar, Users, Minus, Plus, X, Hotel as HotelIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Popover,
   PopoverContent,
@@ -26,14 +19,16 @@ import {
   toGregorian,
   toEnglishDigits,
   isValidJalali,
-  getTodayJalali,
   addDaysToJalali,
   toPersianDigits,
   formatNights,
+  formatJalaliWithDay,
 } from '@/src/lib/jalali';
 import type { City } from '@/src/types/grs';
 import useSWR from 'swr';
 import { JalaliDatePicker } from './jalali-date-picker';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 
 interface SearchFormProps {
   defaultValues?: {
@@ -49,6 +44,9 @@ interface SearchFormProps {
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
+// Cities to show initially (without Tehran)
+const INITIAL_CITIES = ['اصفهان', 'شیراز', 'مشهد', 'تبریز', 'یزد'];
+
 export function SearchForm({
   defaultValues,
   variant = 'default',
@@ -62,7 +60,37 @@ export function SearchForm({
   }>('/api/grs/cities', fetcher);
   const cities = Array.isArray(citiesResponse?.value?.cities) ? citiesResponse.value.cities : [];
 
+  // Fetch hotels for autocomplete (lazy load when user types)
+  const [hotelSearchQuery, setHotelSearchQuery] = useState('');
+  const [hotels, setHotels] = useState<any[]>([]);
+  const [hotelsLoading, setHotelsLoading] = useState(false);
+  
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (hotelSearchQuery.length >= 2) {
+        setHotelsLoading(true);
+        try {
+          // Search for properties by name
+          const response = await fetch(`/api/grs/properties?search=${encodeURIComponent(hotelSearchQuery)}`);
+          const data = await response.json();
+          if (data.value?.properties) {
+            setHotels(data.value.properties.slice(0, 10));
+          }
+        } catch (error) {
+          console.error('Failed to search hotels:', error);
+        } finally {
+          setHotelsLoading(false);
+        }
+      } else {
+        setHotels([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [hotelSearchQuery]);
+
   const [cityId, setCityId] = useState(defaultValues?.cityId || '');
+  const [cityName, setCityName] = useState('');
   const [checkIn, setCheckIn] = useState(
     defaultValues?.checkIn
       ? toJalaliPersian(defaultValues.checkIn)
@@ -78,6 +106,55 @@ export function SearchForm({
     defaultValues?.childrenAges || []
   );
   const [guestsOpen, setGuestsOpen] = useState(false);
+  const [citySearchOpen, setCitySearchOpen] = useState(false);
+  const [citySearchText, setCitySearchText] = useState('');
+
+  // Filter cities based on search
+  const filteredCities = useMemo(() => {
+    if (!citySearchText) {
+      // Show only initial cities when no search text
+      return cities.filter(city => INITIAL_CITIES.includes(city.name));
+    }
+    return cities.filter(city => 
+      city.name.toLowerCase().includes(citySearchText.toLowerCase()) ||
+      city.name_en.toLowerCase().includes(citySearchText.toLowerCase())
+    );
+  }, [cities, citySearchText]);
+
+  // Combined suggestions (cities + hotels)
+  const combinedSuggestions = useMemo(() => {
+    if (!citySearchText) return [];
+    
+    const cityResults = filteredCities.map(city => ({
+      type: 'city' as const,
+      id: String(city.id),
+      name: city.name,
+      subname: city.province_name,
+    }));
+
+    const hotelResults = hotels.map(hotel => ({
+      type: 'hotel' as const,
+      id: String(hotel.id),
+      name: hotel.name,
+      subname: hotel.city_name,
+      image: hotel.main_image?.url,
+    }));
+
+    return [...cityResults, ...hotelResults].slice(0, 10);
+  }, [filteredCities, hotels, citySearchText]);
+
+  const handleSelectSuggestion = (suggestion: typeof combinedSuggestions[0]) => {
+    if (suggestion.type === 'city') {
+      setCityId(suggestion.id);
+      setCityName(suggestion.name);
+    } else {
+      // For hotel selection, we'll navigate to the hotel page
+      router.push(`/hotels/${suggestion.id}`);
+      return;
+    }
+    setCitySearchOpen(false);
+    setCitySearchText('');
+  };
 
   const checkInValid = isValidJalali(toEnglishDigits(checkIn));
   const checkOutValid = isValidJalali(toEnglishDigits(checkOut));
@@ -134,39 +211,111 @@ export function SearchForm({
                 : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
             }`}
           >
-            {/* City Select */}
+            {/* City Select with Autocomplete */}
             <Field className={isHero ? 'lg:col-span-1' : ''}>
               {!isCompact && <FieldLabel>مقصد</FieldLabel>}
-              <Select value={cityId} onValueChange={setCityId}>
-                <SelectTrigger className={isCompact ? 'h-9' : ''}>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <SelectValue placeholder="شهر را انتخاب کنید" />
+              <Popover open={citySearchOpen} onOpenChange={setCitySearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={`w-full justify-start font-normal ${isCompact ? 'h-9' : ''}`}
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="truncate">
+                        {cityName || (cityId ? cities.find(c => String(c.id) === cityId)?.name : 'شهر یا هتل را انتخاب کنید')}
+                      </span>
+                    </div>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0" align="start">
+                  <div className="space-y-1 p-2">
+                    <Input
+                      placeholder="جستجوی شهر یا هتل..."
+                      value={citySearchText}
+                      onChange={(e) => {
+                        setCitySearchText(e.target.value);
+                        setHotelSearchQuery(e.target.value);
+                      }}
+                      className="h-9"
+                      autoFocus
+                    />
+                    {citiesLoading || hotelsLoading ? (
+                      <div className="flex items-center justify-center p-4">
+                        <Spinner className="h-5 w-5" />
+                      </div>
+                    ) : combinedSuggestions.length === 0 ? (
+                      citySearchText ? (
+                        <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+                          موردی یافت نشد
+                        </div>
+                      ) : (
+                        <div className="p-2">
+                          <div className="text-xs text-muted-foreground mb-2 px-2">شهرهای پیشنهادی</div>
+                          {filteredCities.map((city) => (
+                            <button
+                              key={city.id}
+                              type="button"
+                              className="w-full text-right px-2 py-1.5 rounded hover:bg-accent text-sm"
+                              onClick={() => handleSelectSuggestion({
+                                type: 'city',
+                                id: String(city.id),
+                                name: city.name,
+                                subname: city.province_name,
+                              })}
+                            >
+                              {city.name}
+                              {city.province_name && city.province_name !== city.name && (
+                                <span className="text-muted-foreground mr-1 text-xs">
+                                  ({city.province_name})
+                                </span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )
+                    ) : (
+                      <ScrollArea className="h-[200px]">
+                        <div className="space-y-1">
+                          {combinedSuggestions.map((suggestion, index) => (
+                            <button
+                              key={`${suggestion.type}-${suggestion.id}-${index}`}
+                              type="button"
+                              className="w-full text-right px-2 py-2 rounded hover:bg-accent flex items-center gap-2"
+                              onClick={() => handleSelectSuggestion(suggestion)}
+                            >
+                              {suggestion.type === 'hotel' && suggestion.image ? (
+                                <div className="w-8 h-8 rounded overflow-hidden bg-muted flex-shrink-0">
+                                  <img src={suggestion.image} alt="" className="w-full h-full object-cover" />
+                                </div>
+                              ) : (
+                                <div className={`w-8 h-8 rounded flex items-center justify-center flex-shrink-0 ${
+                                  suggestion.type === 'hotel' ? 'bg-primary/10 text-primary' : 'bg-muted'
+                                }`}>
+                                  {suggestion.type === 'hotel' ? (
+                                    <HotelIcon className="h-4 w-4" />
+                                  ) : (
+                                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                                  )}
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium truncate">{suggestion.name}</div>
+                                {suggestion.subname && (
+                                  <div className="text-xs text-muted-foreground truncate">{suggestion.subname}</div>
+                                )}
+                              </div>
+                              {suggestion.type === 'hotel' && (
+                                <Badge variant="secondary" className="text-xs">هتل</Badge>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    )}
                   </div>
-                </SelectTrigger>
-                <SelectContent>
-                  {citiesLoading ? (
-                    <div className="flex items-center justify-center p-4">
-                      <Spinner className="h-5 w-5" />
-                    </div>
-                  ) : cities.length === 0 ? (
-                    <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
-                      شهری یافت نشد
-                    </div>
-                  ) : (
-                    cities.map((city) => (
-                      <SelectItem key={city.id} value={String(city.id)}>
-                        {city.name}
-                        {city.province_name && city.province_name !== city.name && (
-                          <span className="text-muted-foreground mr-1">
-                            ({city.province_name})
-                          </span>
-                        )}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+                </PopoverContent>
+              </Popover>
             </Field>
 
             {/* Check-in Date */}
@@ -174,7 +323,16 @@ export function SearchForm({
               {!isCompact && <FieldLabel>تاریخ ورود</FieldLabel>}
               <JalaliDatePicker
                 value={checkIn}
-                onChange={setCheckIn}
+                onChange={(date) => {
+                  setCheckIn(date);
+                  // Auto-update check-out if it's before new check-in
+                  const checkInDate = toGregorian(toEnglishDigits(date));
+                  const checkOutDate = toGregorian(toEnglishDigits(checkOut));
+                  if (new Date(checkOutDate) <= new Date(checkInDate)) {
+                    setCheckOut(toJalaliPersian(addDaysToJalali(date, 1)));
+                  }
+                }}
+                displayFormat={formatJalaliWithDay}
                 placeholder="۱۴۰۳/۰۹/۱۵"
                 className={isCompact ? 'h-9' : ''}
               />
@@ -186,6 +344,7 @@ export function SearchForm({
               <JalaliDatePicker
                 value={checkOut}
                 onChange={setCheckOut}
+                displayFormat={formatJalaliWithDay}
                 placeholder="۱۴۰۳/۰۹/۱۶"
                 minDate={(() => {
                   try {

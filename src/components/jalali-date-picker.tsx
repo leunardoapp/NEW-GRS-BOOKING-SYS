@@ -15,6 +15,7 @@ interface JalaliDatePickerProps {
   minDate?: Date;
   className?: string;
   disabled?: boolean;
+  displayFormat?: (date: Date | string) => string;
 }
 
 export function JalaliDatePicker({
@@ -24,6 +25,7 @@ export function JalaliDatePicker({
   minDate,
   className,
   disabled,
+  displayFormat,
 }: JalaliDatePickerProps) {
   const [open, setOpen] = React.useState(false);
 
@@ -49,14 +51,27 @@ export function JalaliDatePicker({
   // Convert Jalali to display text
   const displayValue = React.useMemo(() => {
     if (!value) return '';
-    // Ensure proper format with Persian digits
-    const normalized = toEnglishDigits(value);
-    const parts = normalized.split(/[-/]/);
-    if (parts.length === 3) {
-      return `${toPersianDigits(parts[0])}/${toPersianDigits(parts[1].padStart(2, '0'))}/${toPersianDigits(parts[2].padStart(2, '0'))}`;
+    
+    try {
+      const gregorian = toGregorian(toEnglishDigits(value));
+      const dateObj = new Date(gregorian);
+      
+      // Use custom format if provided
+      if (displayFormat) {
+        return displayFormat(dateObj);
+      }
+      
+      // Default format: YYYY/MM/DD with Persian digits
+      const normalized = toEnglishDigits(value);
+      const parts = normalized.split(/[-/]/);
+      if (parts.length === 3) {
+        return `${toPersianDigits(parts[0])}/${toPersianDigits(parts[1].padStart(2, '0'))}/${toPersianDigits(parts[2].padStart(2, '0'))}`;
+      }
+      return value;
+    } catch {
+      return value;
     }
-    return value;
-  }, [value]);
+  }, [value, displayFormat]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
