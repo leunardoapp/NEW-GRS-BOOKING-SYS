@@ -1,491 +1,485 @@
-'use client';
+"use client"
 
-import { useState, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Search, MapPin, Calendar, Users, Minus, Plus, X, Hotel as HotelIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { Card, CardContent } from '@/components/ui/card';
-import { Field, FieldLabel } from '@/components/ui/field';
-import { Separator } from '@/components/ui/separator';
-import { Spinner } from '@/components/ui/spinner';
-import {
-  toJalaliPersian,
-  toGregorian,
-  toEnglishDigits,
-  isValidJalali,
-  addDaysToJalali,
-  toPersianDigits,
-  formatNights,
-  formatJalaliWithDay,
-} from '@/src/lib/jalali';
-import type { City } from '@/src/types/grs';
-import useSWR from 'swr';
-import { JalaliDatePicker } from './jalali-date-picker';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
+import { useState, useEffect, useRef, useCallback } from "react"
+import { useRouter } from "next/navigation"
+import { Search, MapPin, Users, Minus, Plus, ChevronDown } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import { JalaliDateRangePicker, formatJalaliDate } from "./jalali-date-picker"
 
-interface SearchFormProps {
-  defaultValues?: {
-    cityId?: string;
-    checkIn?: string;
-    checkOut?: string;
-    adults?: number;
-    childrenAges?: number[];
-  };
-  variant?: 'default' | 'compact' | 'hero';
-  onSearch?: (params: URLSearchParams) => void;
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface City {
+  id: string
+  name: string
+  englishName: string
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+interface HotelSuggestion {
+  id: number
+  name: string
+  cityName: string
+  image?: string
+}
 
-// Cities to show initially (without Tehran)
-const INITIAL_CITIES = ['اصفهان', 'شیراز', 'مشهد', 'تبریز', 'یزد'];
+// ─── Static data (matches promt.txt & IMPLEMENTATION_SUMMARY) ────────────────
 
-export function SearchForm({
-  defaultValues,
-  variant = 'default',
-  onSearch,
-}: SearchFormProps) {
-  const router = useRouter();
+const DEFAULT_CITIES: City[] = [
+  { id: "isfahan",  name: "اصفهان", englishName: "Isfahan" },
+  { id: "shiraz",   name: "شیراز",  englishName: "Shiraz"  },
+  { id: "mashhad",  name: "مشهد",   englishName: "Mashhad" },
+  { id: "tabriz",   name: "تبریز",  englishName: "Tabriz"  },
+  { id: "yazd",     name: "یزد",    englishName: "Yazd"    },
+]
 
-  const { data: citiesResponse, isLoading: citiesLoading } = useSWR<{
-    code: number;
-    value: { cities: City[]; total: number };
-  }>('/api/grs/cities', fetcher);
-  const cities = Array.isArray(citiesResponse?.value?.cities) ? citiesResponse.value.cities : [];
+// ─── Guests selector ─────────────────────────────────────────────────────────
 
-  // Fetch hotels for autocomplete (lazy load when user types)
-  const [hotelSearchQuery, setHotelSearchQuery] = useState('');
-  const [hotels, setHotels] = useState<any[]>([]);
-  const [hotelsLoading, setHotelsLoading] = useState(false);
-  
+interface GuestsSelectorProps {
+  adults: number
+  children: number
+  rooms: number
+  onChange: (adults: number, children: number, rooms: number) => void
+}
+
+function GuestsSelector({ adults, children, rooms, onChange }: GuestsSelectorProps) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
-    const timer = setTimeout(async () => {
-      if (hotelSearchQuery.length >= 2) {
-        setHotelsLoading(true);
-        try {
-          // Search for properties by name
-          const response = await fetch(`/api/grs/properties?search=${encodeURIComponent(hotelSearchQuery)}`);
-          const data = await response.json();
-          if (data.value?.properties) {
-            setHotels(data.value.properties.slice(0, 10));
-          }
-        } catch (error) {
-          console.error('Failed to search hotels:', error);
-        } finally {
-          setHotelsLoading(false);
-        }
-      } else {
-        setHotels([]);
-      }
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [hotelSearchQuery]);
-
-  const [cityId, setCityId] = useState(defaultValues?.cityId || '');
-  const [cityName, setCityName] = useState('');
-  const [checkIn, setCheckIn] = useState(
-    defaultValues?.checkIn
-      ? toJalaliPersian(defaultValues.checkIn)
-      : toJalaliPersian(new Date())
-  );
-  const [checkOut, setCheckOut] = useState(
-    defaultValues?.checkOut
-      ? toJalaliPersian(defaultValues.checkOut)
-      : toJalaliPersian(addDaysToJalali(toJalaliPersian(new Date()), 1))
-  );
-  const [adults, setAdults] = useState(defaultValues?.adults || 2);
-  const [childrenAges, setChildrenAges] = useState<number[]>(
-    defaultValues?.childrenAges || []
-  );
-  const [guestsOpen, setGuestsOpen] = useState(false);
-  const [citySearchOpen, setCitySearchOpen] = useState(false);
-  const [citySearchText, setCitySearchText] = useState('');
-
-  // Filter cities based on search
-  const filteredCities = useMemo(() => {
-    if (!citySearchText) {
-      // Show only initial cities when no search text
-      return cities.filter(city => INITIAL_CITIES.includes(city.name));
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
     }
-    return cities.filter(city => 
-      city.name.toLowerCase().includes(citySearchText.toLowerCase()) ||
-      city.name_en.toLowerCase().includes(citySearchText.toLowerCase())
-    );
-  }, [cities, citySearchText]);
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [])
 
-  // Combined suggestions (cities + hotels)
-  const combinedSuggestions = useMemo(() => {
-    if (!citySearchText) return [];
-    
-    const cityResults = filteredCities.map(city => ({
-      type: 'city' as const,
-      id: String(city.id),
-      name: city.name,
-      subname: city.province_name,
-    }));
+  const Counter = ({
+    label,
+    sub,
+    value,
+    onInc,
+    onDec,
+    min = 0,
+  }: {
+    label: string
+    sub: string
+    value: number
+    onInc: () => void
+    onDec: () => void
+    min?: number
+  }) => (
+    <div className="flex items-center justify-between py-2">
+      <div className="text-right">
+        <p className="text-sm font-medium">{label}</p>
+        <p className="text-xs text-muted-foreground">{sub}</p>
+      </div>
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onDec}
+          disabled={value <= min}
+          className="h-8 w-8 rounded-full border flex items-center justify-center hover:bg-accent disabled:opacity-30 transition-colors"
+        >
+          <Minus className="h-3 w-3" />
+        </button>
+        <span className="w-5 text-center text-sm font-semibold">{value}</span>
+        <button
+          type="button"
+          onClick={onInc}
+          className="h-8 w-8 rounded-full border flex items-center justify-center hover:bg-accent transition-colors"
+        >
+          <Plus className="h-3 w-3" />
+        </button>
+      </div>
+    </div>
+  )
 
-    const hotelResults = hotels.map(hotel => ({
-      type: 'hotel' as const,
-      id: String(hotel.id),
-      name: hotel.name,
-      subname: hotel.city_name,
-      image: hotel.main_image?.url,
-    }));
-
-    return [...cityResults, ...hotelResults].slice(0, 10);
-  }, [filteredCities, hotels, citySearchText]);
-
-  const handleSelectSuggestion = (suggestion: typeof combinedSuggestions[0]) => {
-    if (suggestion.type === 'city') {
-      setCityId(suggestion.id);
-      setCityName(suggestion.name);
-    } else {
-      // For hotel selection, we'll navigate to the hotel page
-      router.push(`/hotels/${suggestion.id}`);
-      return;
-    }
-    setCitySearchOpen(false);
-    setCitySearchText('');
-  };
-
-  const checkInValid = isValidJalali(toEnglishDigits(checkIn));
-  const checkOutValid = isValidJalali(toEnglishDigits(checkOut));
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!cityId || !checkInValid || !checkOutValid) return;
-
-    const params = new URLSearchParams();
-    params.set('city_id', cityId);
-    params.set('check_in', toGregorian(toEnglishDigits(checkIn)));
-    params.set('check_out', toGregorian(toEnglishDigits(checkOut)));
-    params.set('adults_count', String(adults)); // ← نام صحیح طبق GRS
-    if (childrenAges.length > 0) {
-      params.set('children', childrenAges.join(',')); // ← نام صحیح طبق GRS
-    }
-
-    if (onSearch) {
-      onSearch(params);
-    } else {
-      router.push(`/search?${params.toString()}`);
-    }
-  };
-
-  const addChild = () => {
-    if (childrenAges.length < 4) setChildrenAges([...childrenAges, 5]);
-  };
-
-  const removeChild = (index: number) => {
-    setChildrenAges(childrenAges.filter((_, i) => i !== index));
-  };
-
-  const updateChildAge = (index: number, age: number) => {
-    const updated = [...childrenAges];
-    updated[index] = age;
-    setChildrenAges(updated);
-  };
-
-  const totalGuests = adults + childrenAges.length;
-  const isHero = variant === 'hero';
-  const isCompact = variant === 'compact';
+  const label = `${adults + children} نفر، ${rooms} اتاق`
 
   return (
-    <form onSubmit={handleSubmit}>
-      <Card className={isHero ? 'shadow-xl' : ''}>
-        <CardContent className={isHero ? 'p-6' : isCompact ? 'p-3' : 'p-4'}>
-          <div
-            className={`grid gap-4 ${
-              isHero
-                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-5'
-                : isCompact
-                ? 'grid-cols-2 md:grid-cols-5 gap-2'
-                : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
-            }`}
-          >
-            {/* City Select with Autocomplete */}
-            <Field className={isHero ? 'lg:col-span-1' : ''}>
-              {!isCompact && <FieldLabel>مقصد</FieldLabel>}
-              <Popover open={citySearchOpen} onOpenChange={setCitySearchOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={`w-full justify-start font-normal ${isCompact ? 'h-9' : ''}`}
-                  >
-                    <div className="flex items-center gap-2 truncate">
-                      <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <span className="truncate">
-                        {cityName || (cityId ? cities.find(c => String(c.id) === cityId)?.name : 'شهر یا هتل را انتخاب کنید')}
-                      </span>
-                    </div>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[300px] p-0" align="start">
-                  <div className="space-y-1 p-2">
-                    <Input
-                      placeholder="جستجوی شهر یا هتل..."
-                      value={citySearchText}
-                      onChange={(e) => {
-                        setCitySearchText(e.target.value);
-                        setHotelSearchQuery(e.target.value);
-                      }}
-                      className="h-9"
-                      autoFocus
-                    />
-                    {citiesLoading || hotelsLoading ? (
-                      <div className="flex items-center justify-center p-4">
-                        <Spinner className="h-5 w-5" />
-                      </div>
-                    ) : combinedSuggestions.length === 0 ? (
-                      citySearchText ? (
-                        <div className="flex items-center justify-center p-4 text-sm text-muted-foreground">
-                          موردی یافت نشد
-                        </div>
-                      ) : (
-                        <div className="p-2">
-                          <div className="text-xs text-muted-foreground mb-2 px-2">شهرهای پیشنهادی</div>
-                          {filteredCities.map((city) => (
-                            <button
-                              key={city.id}
-                              type="button"
-                              className="w-full text-right px-2 py-1.5 rounded hover:bg-accent text-sm"
-                              onClick={() => handleSelectSuggestion({
-                                type: 'city',
-                                id: String(city.id),
-                                name: city.name,
-                                subname: city.province_name,
-                              })}
-                            >
-                              {city.name}
-                              {city.province_name && city.province_name !== city.name && (
-                                <span className="text-muted-foreground mr-1 text-xs">
-                                  ({city.province_name})
-                                </span>
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                      )
-                    ) : (
-                      <ScrollArea className="h-[200px]">
-                        <div className="space-y-1">
-                          {combinedSuggestions.map((suggestion, index) => (
-                            <button
-                              key={`${suggestion.type}-${suggestion.id}-${index}`}
-                              type="button"
-                              className="w-full text-right px-2 py-2 rounded hover:bg-accent flex items-center gap-2"
-                              onClick={() => handleSelectSuggestion(suggestion)}
-                            >
-                              {suggestion.type === 'hotel' && suggestion.image ? (
-                                <div className="w-8 h-8 rounded overflow-hidden bg-muted flex-shrink-0">
-                                  <img src={suggestion.image} alt="" className="w-full h-full object-cover" />
-                                </div>
-                              ) : (
-                                <div className={`w-8 h-8 rounded flex items-center justify-center flex-shrink-0 ${
-                                  suggestion.type === 'hotel' ? 'bg-primary/10 text-primary' : 'bg-muted'
-                                }`}>
-                                  {suggestion.type === 'hotel' ? (
-                                    <HotelIcon className="h-4 w-4" />
-                                  ) : (
-                                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                                  )}
-                                </div>
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <div className="text-sm font-medium truncate">{suggestion.name}</div>
-                                {suggestion.subname && (
-                                  <div className="text-xs text-muted-foreground truncate">{suggestion.subname}</div>
-                                )}
-                              </div>
-                              {suggestion.type === 'hotel' && (
-                                <Badge variant="secondary" className="text-xs">هتل</Badge>
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    )}
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </Field>
+    <div ref={ref} className="relative w-full">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={cn(
+          "w-full flex items-center gap-2 px-3 py-2 rounded-md border bg-background text-right",
+          "hover:border-primary/60 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+          open && "border-primary ring-2 ring-primary/20",
+        )}
+        dir="rtl"
+      >
+        <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <span className="flex-1 min-w-0 text-sm truncate">{label}</span>
+        <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
+      </button>
 
-            {/* Check-in Date */}
-            <Field>
-              {!isCompact && <FieldLabel>تاریخ ورود</FieldLabel>}
-              <JalaliDatePicker
-                value={checkIn}
-                onChange={(date) => {
-                  setCheckIn(date);
-                  // Auto-update check-out if it's before new check-in
-                  const checkInDate = toGregorian(toEnglishDigits(date));
-                  const checkOutDate = toGregorian(toEnglishDigits(checkOut));
-                  if (new Date(checkOutDate) <= new Date(checkInDate)) {
-                    setCheckOut(toJalaliPersian(addDaysToJalali(date, 1)));
-                  }
-                }}
-                displayFormat={formatJalaliWithDay}
-                placeholder="۱۴۰۳/۰۹/۱۵"
-                className={isCompact ? 'h-9' : ''}
-              />
-            </Field>
-
-            {/* Check-out Date */}
-            <Field>
-              {!isCompact && <FieldLabel>تاریخ خروج</FieldLabel>}
-              <JalaliDatePicker
-                value={checkOut}
-                onChange={setCheckOut}
-                displayFormat={formatJalaliWithDay}
-                placeholder="۱۴۰۳/۰۹/۱۶"
-                minDate={(() => {
-                  try {
-                    const g = toGregorian(toEnglishDigits(checkIn));
-                    return new Date(g);
-                  } catch {
-                    return new Date();
-                  }
-                })()}
-                className={isCompact ? 'h-9' : ''}
-              />
-            </Field>
-
-            {/* Guests */}
-            <Field>
-              {!isCompact && <FieldLabel>مسافران</FieldLabel>}
-              <Popover open={guestsOpen} onOpenChange={setGuestsOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={`w-full justify-start font-normal ${isCompact ? 'h-9' : ''}`}
-                  >
-                    <Users className="h-4 w-4 ml-2" />
-                    {toPersianDigits(totalGuests)} مسافر
-                    {childrenAges.length > 0 && (
-                      <span className="text-muted-foreground mr-1">
-                        ({toPersianDigits(childrenAges.length)} کودک)
-                      </span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80" align="start">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium">بزرگسال</div>
-                        <div className="text-sm text-muted-foreground">۱۲ سال به بالا</div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon-sm"
-                          onClick={() => setAdults(Math.max(1, adults - 1))}
-                          disabled={adults <= 1}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <span className="w-6 text-center">{toPersianDigits(adults)}</span>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon-sm"
-                          onClick={() => setAdults(Math.min(10, adults + 1))}
-                          disabled={adults >= 10}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <div className="font-medium">کودک</div>
-                          <div className="text-sm text-muted-foreground">۰ تا ۱۱ سال</div>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={addChild}
-                          disabled={childrenAges.length >= 4}
-                        >
-                          <Plus className="h-4 w-4 ml-1" />
-                          افزودن
-                        </Button>
-                      </div>
-
-                      {childrenAges.length > 0 && (
-                        <div className="space-y-2">
-                          {childrenAges.map((age, index) => (
-                            <div key={index} className="flex items-center gap-2">
-                              <Select
-                                value={String(age)}
-                                onValueChange={(v) => updateChildAge(index, parseInt(v))}
-                              >
-                                <SelectTrigger className="flex-1">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {Array.from({ length: 12 }, (_, i) => (
-                                    <SelectItem key={i} value={String(i)}>
-                                      {i === 0 ? 'زیر ۱ سال' : `${toPersianDigits(i)} سال`}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon-sm"
-                                onClick={() => removeChild(index)}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </Field>
-
-            {/* Search Button */}
-            <div className={isHero ? 'lg:col-span-1 flex items-end' : 'flex items-end'}>
-              <Button
-                type="submit"
-                className={`w-full ${isHero ? 'h-11' : isCompact ? 'h-9' : ''}`}
-                disabled={!cityId || !checkInValid || !checkOutValid}
-              >
-                <Search className="h-4 w-4 ml-2" />
-                جستجو
-              </Button>
-            </div>
+      {open && (
+        <div
+          className="absolute top-full mt-2 right-0 z-50 w-72 rounded-xl border bg-popover shadow-xl p-4 divide-y"
+          dir="rtl"
+        >
+          <Counter
+            label="بزرگسال"
+            sub="۱۲ سال و بالاتر"
+            value={adults}
+            min={1}
+            onInc={() => onChange(adults + 1, children, rooms)}
+            onDec={() => onChange(Math.max(1, adults - 1), children, rooms)}
+          />
+          <Counter
+            label="کودک"
+            sub="زیر ۱۲ سال"
+            value={children}
+            onInc={() => onChange(adults, children + 1, rooms)}
+            onDec={() => onChange(adults, Math.max(0, children - 1), rooms)}
+          />
+          <Counter
+            label="اتاق"
+            sub=""
+            value={rooms}
+            min={1}
+            onInc={() => onChange(adults, children, rooms + 1)}
+            onDec={() => onChange(adults, children, Math.max(1, rooms - 1))}
+          />
+          <div className="pt-3">
+            <Button
+              type="button"
+              size="sm"
+              className="w-full"
+              onClick={() => setOpen(false)}
+            >
+              تأیید
+            </Button>
           </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
-          {checkInValid && checkOutValid && (
-            <div className="mt-3 text-center text-sm text-muted-foreground">
-              {formatNights(
-                toGregorian(toEnglishDigits(checkIn)),
-                toGregorian(toEnglishDigits(checkOut))
-              )}
-            </div>
+// ─── City / Hotel autocomplete ────────────────────────────────────────────────
+
+interface AutocompleteProps {
+  value: string
+  onSelect: (value: string, type: "city" | "hotel", id: string | number) => void
+}
+
+function CityHotelAutocomplete({ value, onSelect }: AutocompleteProps) {
+  const [query, setQuery] = useState(value)
+  const [hotels, setHotels] = useState<HotelSuggestion[]>([])
+  const [open, setOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // Filter cities
+  const filteredCities = query.trim().length === 0
+    ? DEFAULT_CITIES
+    : DEFAULT_CITIES.filter(
+        (c) =>
+          c.name.includes(query) ||
+          c.englishName.toLowerCase().includes(query.toLowerCase()),
+      )
+
+  // Fetch hotels when query changes
+  useEffect(() => {
+    if (query.trim().length < 2) { setHotels([]); return }
+    const timer = setTimeout(async () => {
+      setLoading(true)
+      try {
+        const res = await fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`)
+        if (res.ok) {
+          const data = await res.json()
+          setHotels(data.hotels ?? [])
+        }
+      } catch { /* silent */ }
+      finally { setLoading(false) }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [query])
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [])
+
+  const handleSelect = (display: string, type: "city" | "hotel", id: string | number) => {
+    setQuery(display)
+    setOpen(false)
+    onSelect(display, type, id)
+  }
+
+  const hasResults = filteredCities.length > 0 || hotels.length > 0
+
+  return (
+    <div ref={ref} className="relative w-full" dir="rtl">
+      <div
+        className={cn(
+          "flex items-center gap-2 px-3 py-2 rounded-md border bg-background",
+          "focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary transition-colors",
+        )}
+      >
+        <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={(e) => { setQuery(e.target.value); setOpen(true) }}
+          onFocus={() => setOpen(true)}
+          placeholder="شهر یا نام هتل..."
+          className="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          autoComplete="off"
+        />
+        {query && (
+          <button
+            type="button"
+            onClick={() => { setQuery(""); setHotels([]); inputRef.current?.focus() }}
+            className="text-muted-foreground hover:text-foreground text-xs"
+          >
+            ×
+          </button>
+        )}
+      </div>
+
+      {open && hasResults && (
+        <div className="absolute top-full mt-2 right-0 left-0 z-50 rounded-xl border bg-popover shadow-xl overflow-hidden max-h-80 overflow-y-auto">
+          {/* Cities section */}
+          {filteredCities.length > 0 && (
+            <>
+              <p className="text-[11px] font-semibold text-muted-foreground px-3 pt-2 pb-1 uppercase tracking-wide">
+                شهرها
+              </p>
+              {filteredCities.map((city) => (
+                <button
+                  key={city.id}
+                  type="button"
+                  onClick={() => handleSelect(city.name, "city", city.id)}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent text-right transition-colors"
+                >
+                  <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-sm font-medium">{city.name}</span>
+                  <span className="text-xs text-muted-foreground mr-auto">{city.englishName}</span>
+                </button>
+              ))}
+            </>
           )}
-        </CardContent>
-      </Card>
+
+          {/* Hotels section */}
+          {hotels.length > 0 && (
+            <>
+              <p className="text-[11px] font-semibold text-muted-foreground px-3 pt-2 pb-1 uppercase tracking-wide border-t">
+                هتل‌ها
+              </p>
+              {hotels.map((hotel) => (
+                <button
+                  key={hotel.id}
+                  type="button"
+                  onClick={() => handleSelect(hotel.name, "hotel", hotel.id)}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-accent text-right transition-colors"
+                >
+                  {hotel.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={hotel.image}
+                      alt={hotel.name}
+                      className="h-8 w-8 rounded object-cover shrink-0"
+                    />
+                  ) : (
+                    <div className="h-8 w-8 rounded bg-muted flex items-center justify-center shrink-0">
+                      <MapPin className="h-3 w-3 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0 text-right">
+                    <p className="text-sm font-medium truncate">{hotel.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{hotel.cityName}</p>
+                  </div>
+                </button>
+              ))}
+            </>
+          )}
+
+          {loading && (
+            <p className="text-xs text-muted-foreground px-3 py-2 text-center">
+              در حال جستجو...
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Main Search Form ─────────────────────────────────────────────────────────
+
+interface SearchFormProps {
+  /**
+   * "home"    → full hero version (white card, wider)
+   * "compact" → horizontal bar (used at top of city/results page)
+   */
+  variant?: "home" | "compact"
+  /** Pre-fill values (used when on a city/results page) */
+  initialCity?: string
+  initialCheckIn?: Date
+  initialCheckOut?: Date
+}
+
+export function SearchForm({
+  variant = "home",
+  initialCity = "",
+  initialCheckIn,
+  initialCheckOut,
+}: SearchFormProps) {
+  const router = useRouter()
+
+  const [destination, setDestination] = useState(initialCity)
+  const [destinationType, setDestinationType] = useState<"city" | "hotel">("city")
+  const [destinationId, setDestinationId] = useState<string | number>("")
+
+  const [checkIn, setCheckIn] = useState<Date | undefined>(initialCheckIn)
+  const [checkOut, setCheckOut] = useState<Date | undefined>(initialCheckOut)
+
+  const [adults, setAdults] = useState(2)
+  const [children, setChildren] = useState(0)
+  const [rooms, setRooms] = useState(1)
+
+  const [error, setError] = useState("")
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+
+    if (!destination.trim()) { setError("لطفاً مقصد را وارد کنید"); return }
+    if (!checkIn)            { setError("تاریخ ورود را انتخاب کنید"); return }
+    if (!checkOut)           { setError("تاریخ خروج را انتخاب کنید"); return }
+
+    const params = new URLSearchParams({
+      check_in:  checkIn.toISOString().split("T")[0],
+      check_out: checkOut.toISOString().split("T")[0],
+      adults:    String(adults),
+      children:  String(children),
+      rooms:     String(rooms),
+    })
+
+    if (destinationType === "hotel" && destinationId) {
+      router.push(`/hotels/${destinationId}?${params}`)
+    } else {
+      params.set("city", destination)
+      router.push(`/search?${params}`)
+    }
+  }
+
+  // ── Layout ──
+  const isHome = variant === "home"
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className={cn(
+        "w-full",
+        isHome
+          ? "bg-white dark:bg-card rounded-2xl shadow-2xl border p-5 md:p-6"
+          : "bg-card rounded-xl border p-3 shadow-md",
+      )}
+      dir="rtl"
+    >
+      {isHome && (
+        <h2 className="text-lg font-bold mb-4 text-foreground">
+          هتل مورد نظر خود را پیدا کنید
+        </h2>
+      )}
+
+      {/* ── Grid of fields ── */}
+      <div
+        className={cn(
+          "grid gap-3",
+          isHome
+            ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-[2fr_2.5fr_1.5fr]"
+            : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_2.5fr_1.5fr_auto]",
+        )}
+      >
+        {/* 1. Destination */}
+        <div className="flex flex-col gap-1">
+          {isHome && (
+            <label className="text-xs font-semibold text-muted-foreground">
+              مقصد
+            </label>
+          )}
+          <CityHotelAutocomplete
+            value={destination}
+            onSelect={(val, type, id) => {
+              setDestination(val)
+              setDestinationType(type)
+              setDestinationId(id)
+            }}
+          />
+        </div>
+
+        {/* 2. Date range (Jalali) */}
+        <div className="flex flex-col gap-1">
+          {isHome && (
+            <label className="text-xs font-semibold text-muted-foreground">
+              تاریخ ورود و خروج
+            </label>
+          )}
+          <JalaliDateRangePicker
+            checkIn={checkIn}
+            checkOut={checkOut}
+            onChange={(ci, co) => { setCheckIn(ci); setCheckOut(co) }}
+            placeholder="انتخاب تاریخ ورود و خروج"
+          />
+        </div>
+
+        {/* 3. Guests */}
+        <div className="flex flex-col gap-1">
+          {isHome && (
+            <label className="text-xs font-semibold text-muted-foreground">
+              مسافران
+            </label>
+          )}
+          <GuestsSelector
+            adults={adults}
+            children={children}
+            rooms={rooms}
+            onChange={(a, c, r) => { setAdults(a); setChildren(c); setRooms(r) }}
+          />
+        </div>
+
+        {/* 4. Submit — always full-width on mobile */}
+        <div
+          className={cn(
+            "flex flex-col gap-1",
+            isHome ? "sm:col-span-2 xl:col-span-3" : "",
+          )}
+        >
+          {isHome && <div className="hidden xl:block h-4" />}
+          <Button
+            type="submit"
+            size="lg"
+            className={cn(
+              "w-full gap-2 font-semibold",
+              isHome ? "h-11" : "h-10",
+            )}
+          >
+            <Search className="h-4 w-4" />
+            جستجو
+          </Button>
+        </div>
+      </div>
+
+      {/* Error */}
+      {error && (
+        <p className="mt-2 text-xs text-destructive text-right">{error}</p>
+      )}
     </form>
-  );
+  )
+}
+
+// ─── Compact variant as named export (for results/city pages) ─────────────────
+
+export function CompactSearchForm(props: Omit<SearchFormProps, "variant">) {
+  return <SearchForm {...props} variant="compact" />
 }
