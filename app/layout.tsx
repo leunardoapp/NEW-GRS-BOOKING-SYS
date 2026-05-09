@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Vazirmatn } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
+import { SessionProvider } from '@/src/components/providers/session-provider'
 import './globals.css'
 
 const vazirmatn = Vazirmatn({
@@ -62,7 +63,9 @@ export default function RootLayout({
   return (
     <html lang="fa" dir="rtl" className={`${vazirmatn.variable} bg-background`}>
       <body className="font-sans antialiased min-h-screen">
-        {children}
+        <SessionProvider>
+          {children}
+        </SessionProvider>
         <Toaster 
           position="top-center" 
           richColors 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import Link from 'next/link';
@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/card';
 import { Field, FieldGroup, FieldLabel, FieldError } from '@/components/ui/field';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
@@ -172,5 +172,17 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4 py-12">
+        <Loader2 className="animate-spin h-8 w-8 text-primary" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

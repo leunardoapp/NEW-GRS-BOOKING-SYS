@@ -195,6 +195,11 @@ export async function getCity(idOrSlug: string | number): Promise<City> {
 }
 
 // Properties
+export async function getProperties(params?: Record<string, string | number | boolean>): Promise<Property[]> {
+  const response = await grsRequest<Property[]>('/v1/properties', { params });
+  return response.value || [];
+}
+
 export async function getProperty(id: number): Promise<PropertyDetails> {
   const response = await grsRequest<PropertyDetails>(`/v1/properties/${id}`);
   return response.value;
