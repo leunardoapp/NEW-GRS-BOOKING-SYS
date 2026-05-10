@@ -5,30 +5,39 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('q') || '';
 
+  // Return empty if query is too short, but handle cases where user clicks search bar (could show defaults)
   if (!query || query.length < 2) {
     return NextResponse.json({ cities: [], hotels: [] });
   }
 
   try {
-    // In a real world scenario, the GRS API might have a specific autocomplete endpoint.
-    // For now, we'll fetch cities and properties and filter them.
-    // Optimization: we could cache the cities list.
-    const [allCities, allProperties] = await Promise.all([
+    // Fetch cities and properties
+    // For cities, we fetch all (they are usually cached or small in number)
+    // For hotels, we search by name via API filters if possible, or fetch more to filter
+    const [cities, properties] = await Promise.all([
       getCities(),
-      getProperties({ count: 50 }) // Fetch a batch of properties
+      getProperties({
+        'filters[0][name]': 'name',
+        'filters[0][operand]': 'Contains',
+        'filters[0][value]': query,
+        'per_page': 20
+      }).catch(() => getProperties({ count: 100 })) // Fallback if filters fail
     ]);
 
-    const filteredCities = allCities
+    // Filter cities matching query
+    const filteredCities = cities
       .filter(city =>
-        city.name.toLowerCase().includes(query.toLowerCase()) ||
-        city.name_en.toLowerCase().includes(query.toLowerCase())
+        city.name.includes(query) ||
+        (city.name_en && city.name_en.toLowerCase().includes(query.toLowerCase())) ||
+        (city.slug && city.slug.toLowerCase().includes(query.toLowerCase()))
       )
       .slice(0, 5);
 
-    const filteredHotels = allProperties
+    // Filter properties matching query (API might have already filtered, but we re-verify)
+    const filteredHotels = properties
       .filter(hotel =>
-        hotel.name.toLowerCase().includes(query.toLowerCase()) ||
-        hotel.name_en.toLowerCase().includes(query.toLowerCase())
+        hotel.name.includes(query) ||
+        (hotel.name_en && hotel.name_en.toLowerCase().includes(query.toLowerCase()))
       )
       .slice(0, 10)
       .map(hotel => ({
@@ -43,7 +52,7 @@ export async function GET(request: NextRequest) {
       hotels: filteredHotels
     });
   } catch (error) {
-    console.error('Error fetching suggestions:', error);
-    return NextResponse.json({ error: 'Failed to fetch suggestions' }, { status: 500 });
+    console.error('[Suggestions API] Error:', error);
+    return NextResponse.json({ cities: [], hotels: [] }); // Graceful fallback
   }
 }

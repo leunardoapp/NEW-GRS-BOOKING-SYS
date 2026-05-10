@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Hotel, Shield, Clock, Headphones, Star, MapPin, ShieldCheck, Zap, TrendingUp, Search } from 'lucide-react';
+import { Hotel, Shield, Clock, Headphones, Star, MapPin, ShieldCheck, Zap, TrendingUp, Search, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,39 +8,110 @@ import { PopularCities } from '@/src/components/popular-cities';
 import { getCities, getProperties } from '@/src/lib/grs-client';
 import Image from 'next/image';
 import { formatPriceNumber } from '@/src/lib/jalali';
+import { cn } from '@/lib/utils';
+import { Suspense } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const FEATURES = [
-  {
-    icon: Shield,
-    title: 'تضمین بهترین قیمت',
-    description: 'ما بهترین قیمت‌ها را برای شما تضمین می‌کنیم',
-  },
-  {
-    icon: Clock,
-    title: 'رزرو آنی',
-    description: 'رزرو آنلاین و فوری بدون نیاز به تماس تلفنی',
-  },
-  {
-    icon: Headphones,
-    title: 'پشتیبانی ۲۴/۷',
-    description: 'تیم پشتیبانی ما همیشه در دسترس شماست',
-  },
-  {
-    icon: Star,
-    title: 'هتل‌های منتخب',
-    description: 'فقط بهترین هتل‌ها با بالاترین امتیاز',
-  },
-];
+async function FeaturedHotels() {
+  try {
+    const properties = await getProperties({ count: 8 });
+
+    if (!properties || properties.length === 0) return null;
+
+    return (
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-4 text-center md:text-right">
+            <div>
+              <h2 className="text-3xl font-black text-foreground mb-2 flex items-center justify-center md:justify-start gap-2">
+                <Sparkles className="h-6 w-6 text-primary" />
+                هتل‌های منتخب یورزرو
+              </h2>
+              <p className="text-muted-foreground font-medium">بهترین اقامتگاه‌ها با تضمین قیمت و کیفیت</p>
+            </div>
+            <Button variant="outline" className="rounded-xl font-bold border-2" asChild>
+              <Link href="/search" className="flex items-center gap-2">
+                مشاهده همه هتل‌ها
+                <Search className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {properties.map((hotel) => (
+              <Link key={hotel.id} href={`/hotels/${hotel.id}`} className="group">
+                <Card className="overflow-hidden h-full border-2 border-border/40 transition-all duration-500 hover:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] hover:-translate-y-2 rounded-[2rem]">
+                  <div className="relative h-56 w-full overflow-hidden bg-muted">
+                    {hotel.main_image ? (
+                      <Image
+                        src={hotel.main_image.url}
+                        alt={hotel.name}
+                        fill
+                        className="object-cover transition-transform duration-700 group-hover:scale-110"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        <Hotel className="h-16 w-16 text-muted-foreground/20" />
+                      </div>
+                    )}
+                    <div className="absolute top-4 left-4">
+                      <Badge className="bg-white/95 backdrop-blur-md text-primary font-black px-3 py-1 rounded-xl shadow-lg border-none">
+                        {hotel.stars} ستاره
+                      </Badge>
+                    </div>
+                  </div>
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-1.5 text-[10px] font-black text-primary uppercase tracking-widest mb-2">
+                      <MapPin className="h-3.5 w-3.5" />
+                      <span>{hotel.city_name}</span>
+                    </div>
+                    <h3 className="font-black text-lg text-foreground mb-4 line-clamp-1 group-hover:text-primary transition-colors leading-tight">
+                      {hotel.name}
+                    </h3>
+                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-dashed">
+                      <div className="flex items-center gap-1 bg-yellow-400/10 px-2 py-1 rounded-lg">
+                        <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500" />
+                        <span className="text-xs font-black text-yellow-700">۴.۸</span>
+                      </div>
+                      <div className="text-left">
+                        <span className="text-[10px] text-muted-foreground block font-bold mb-0.5">شروع قیمت از</span>
+                        <span className="text-xl font-black text-primary">
+                          {hotel.min_price ? formatPriceNumber(hotel.min_price) : 'استعلام'}
+                          <span className="text-xs font-medium mr-1 opacity-70">تومان</span>
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  } catch (e) {
+    return null;
+  }
+}
+
+function HotelsSkeleton() {
+  return (
+    <div className="container mx-auto px-4 py-20">
+      <div className="flex justify-between mb-12"><Skeleton className="h-10 w-64" /><Skeleton className="h-10 w-32" /></div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-[400px] rounded-[2rem]" />)}
+      </div>
+    </div>
+  );
+}
 
 export default async function HomePage() {
-  // Fetch dynamic data with error handling
+  // Fetch dynamic data for cities
   let cities = [];
-  let properties = [];
   try {
     cities = await getCities();
-    properties = await getProperties({ count: 8 });
   } catch (error) {
-    console.error('Failed to fetch dynamic data:', error);
+    console.error('Failed to fetch cities:', error);
   }
 
   const popularCitiesData = cities.length > 0
@@ -62,41 +133,26 @@ export default async function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="p-1.5 bg-primary rounded-lg">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="p-2 bg-primary rounded-2xl shadow-lg shadow-primary/20">
               <Hotel className="h-6 w-6 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold">یورزرو</span>
+            <span className="text-2xl font-black tracking-tighter">یورزرو</span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-6">
-            <Link
-              href="/search"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              جستجوی هتل
-            </Link>
-            <Link
-              href="/about"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              درباره ما
-            </Link>
-            <Link
-              href="/contact"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              تماس با ما
-            </Link>
+          <nav className="hidden md:flex items-center gap-8">
+            <Link href="/search" className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">جستجوی هتل</Link>
+            <Link href="/about" className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">درباره ما</Link>
+            <Link href="/contact" className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">تماس با ما</Link>
           </nav>
 
           <div className="flex items-center gap-3">
-            <Button variant="ghost" asChild>
+            <Button variant="ghost" className="rounded-xl font-bold" asChild>
               <Link href="/auth/login">ورود</Link>
             </Button>
-            <Button asChild>
+            <Button className="rounded-xl font-bold shadow-lg shadow-primary/10 px-6" asChild>
               <Link href="/auth/register">ثبت نام</Link>
             </Button>
           </div>
@@ -104,52 +160,47 @@ export default async function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative min-h-[70vh] flex items-center pt-20 pb-32 overflow-hidden">
-        {/* Animated Background */}
+      <section className="relative min-h-[75vh] flex items-center pt-20 pb-32 overflow-hidden">
         <div className="absolute inset-0 bg-slate-950">
-            <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-transparent to-slate-950" />
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/30 rounded-full blur-[120px] animate-pulse" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/20 rounded-full blur-[120px] animate-pulse delay-700" />
+            <div className="absolute inset-0 bg-gradient-to-b from-primary/15 via-transparent to-slate-950 z-10" />
+            <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px] animate-pulse delay-1000" />
             <Image
                 src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=2070"
                 alt="Luxury Hotel"
                 fill
-                className="object-cover opacity-40 mix-blend-overlay"
+                className="object-cover opacity-50 mix-blend-overlay"
                 priority
             />
         </div>
 
-        <div className="container mx-auto px-4 relative z-10">
+        <div className="container mx-auto px-4 relative z-20">
           <div className="max-w-4xl mx-auto text-center mb-16">
-            <Badge className="mb-6 bg-primary/20 text-primary border-primary/30 py-1.5 px-4 rounded-full text-sm font-bold backdrop-blur-md">
-                ✨ بهترین سامانه رزرو هتل در سال ۱۴۰۳
+            <Badge className="mb-8 bg-white/10 text-white border-white/20 py-2 px-6 rounded-full text-xs font-black backdrop-blur-xl tracking-[0.2em] shadow-2xl">
+                HOTEL RESERVATION SYSTEM
             </Badge>
-            <h1 className="text-4xl md:text-7xl font-black text-white mb-6 leading-tight tracking-tight text-balance">
-              تجربه اقامتی <span className="text-primary italic">رویایی</span> در سراسر ایران
+            <h1 className="text-5xl md:text-8xl font-black text-white mb-8 leading-[1.1] tracking-tight text-balance">
+              آغاز یک سفر <span className="text-primary italic">فراموش‌نشدنی</span>
             </h1>
-            <p className="text-xl md:text-2xl text-slate-300 font-medium max-w-2xl mx-auto text-pretty">
-              با یورزرو، در کوتاه‌ترین زمان و با کمترین قیمت، بهترین هتل‌های ایران را رزرو کنید.
+            <p className="text-xl md:text-2xl text-slate-300 font-medium max-w-2xl mx-auto text-pretty leading-relaxed">
+              با یورزرو، لوکس‌ترین هتل‌های ایران را با قیمتی استثنایی و تایید آنی رزرو کنید.
             </p>
           </div>
 
-          {/* Search Form */}
-          <div className="relative group">
-            <div className="absolute -inset-4 bg-primary/20 rounded-[3rem] blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <SearchForm variant="home" />
-          </div>
+          <SearchForm variant="home" />
 
-          <div className="mt-12 flex flex-wrap justify-center gap-8 md:gap-16 opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
-             <div className="flex items-center gap-2 text-white">
-                <ShieldCheck className="h-6 w-6 text-primary" />
-                <span className="font-bold">تضمین امنیت</span>
+          <div className="mt-16 flex flex-wrap justify-center gap-10 md:gap-24 opacity-60">
+             <div className="flex items-center gap-3 text-white group cursor-default">
+                <div className="p-3 bg-white/5 rounded-2xl group-hover:bg-primary/20 transition-colors border border-white/10"><ShieldCheck className="h-6 w-6 text-primary" /></div>
+                <span className="font-black text-sm tracking-wide">تضمین امنیت</span>
              </div>
-             <div className="flex items-center gap-2 text-white">
-                <Zap className="h-6 w-6 text-primary" />
-                <span className="font-bold">تایید آنی</span>
+             <div className="flex items-center gap-3 text-white group cursor-default">
+                <div className="p-3 bg-white/5 rounded-2xl group-hover:bg-primary/20 transition-colors border border-white/10"><Zap className="h-6 w-6 text-primary" /></div>
+                <span className="font-black text-sm tracking-wide">تایید آنی</span>
              </div>
-             <div className="flex items-center gap-2 text-white">
-                <Headphones className="h-6 w-6 text-primary" />
-                <span className="font-bold">پشتیبانی دائمی</span>
+             <div className="flex items-center gap-3 text-white group cursor-default">
+                <div className="p-3 bg-white/5 rounded-2xl group-hover:bg-primary/20 transition-colors border border-white/10"><Headphones className="h-6 w-6 text-primary" /></div>
+                <span className="font-black text-sm tracking-wide">پشتیبانی ۲۴/۷</span>
              </div>
           </div>
         </div>
@@ -159,235 +210,103 @@ export default async function HomePage() {
       <PopularCities cities={popularCitiesData} />
 
       {/* Featured Hotels */}
-      {properties.length > 0 && (
-        <section className="py-16 bg-background">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-2xl font-bold text-foreground">هتل‌های منتخب</h2>
-                <p className="text-muted-foreground mt-1">بهترین هتل‌ها با بالاترین تخفیف</p>
-              </div>
-              <Button variant="ghost" asChild>
-                <Link href="/search" className="flex items-center gap-1">
-                  مشاهده همه هتل‌ها
-                  <Search className="h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
+      <Suspense fallback={<HotelsSkeleton />}>
+        <FeaturedHotels />
+      </Suspense>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {properties.map((hotel) => (
-                <Link key={hotel.id} href={`/hotels/${hotel.id}`} className="group">
-                  <Card className="overflow-hidden h-full border border-border/50 transition-all hover:shadow-xl hover:-translate-y-1">
-                    <div className="relative h-48 w-full overflow-hidden bg-muted">
-                      {hotel.main_image ? (
-                        <Image
-                          src={hotel.main_image.url}
-                          alt={hotel.name}
-                          fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center h-full">
-                          <Hotel className="h-12 w-12 text-muted-foreground/30" />
-                        </div>
-                      )}
-                      <div className="absolute top-2 left-2">
-                        <Badge className="bg-white/90 backdrop-blur-sm text-primary hover:bg-white">
-                          {hotel.stars} ستاره
-                        </Badge>
-                      </div>
-                    </div>
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
-                        <MapPin className="h-3 w-3" />
-                        <span>{hotel.city_name}</span>
-                      </div>
-                      <h3 className="font-bold text-foreground mb-3 line-clamp-1 group-hover:text-primary transition-colors">
-                        {hotel.name}
-                      </h3>
-                      <div className="flex items-center justify-between mt-auto">
-                        <div className="flex items-center gap-0.5">
-                          <Star className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
-                          <span className="text-sm font-medium">۴.۸</span>
-                        </div>
-                        <div className="text-left">
-                          <span className="text-xs text-muted-foreground block">از</span>
-                          <span className="text-lg font-bold text-primary">
-                            {hotel.min_price ? formatPriceNumber(hotel.min_price) : 'استعلام'}
-                            <span className="text-[10px] font-normal mr-1">تومان</span>
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Why Us section with modern grid */}
-      <section className="py-20 bg-muted/30">
+      {/* Why Us section */}
+      <section className="py-24 bg-muted/30">
         <div className="container mx-auto px-4">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-3xl font-bold text-foreground mb-4">چرا یورزرو؟</h2>
-            <p className="text-muted-foreground text-pretty">
-              ما با تمرکز بر تجربه کاربری مدرن و اتصال مستقیم به سیستم‌های هتلداری، بهترین تجربه رزرو را برای شما رقم می‌زنیم.
+          <div className="text-center max-w-3xl mx-auto mb-20">
+            <h2 className="text-4xl font-black text-foreground mb-6">چرا یورزرو را انتخاب کنید؟</h2>
+            <p className="text-muted-foreground text-lg font-medium leading-relaxed">
+              ما با تکیه بر فناوری‌های نوین و حذف واسطه‌ها، پلی مستقیم میان شما و برترین هتل‌های کشور ساخته‌ایم.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card className="border-none shadow-none bg-transparent">
-              <CardContent className="pt-0 flex flex-col items-center text-center">
-                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 transform rotate-3 hover:rotate-0 transition-transform">
-                  <ShieldCheck className="h-8 w-8 text-primary" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
+            {[
+              { icon: ShieldCheck, title: "پرداخت امن", desc: "تراکنش‌های شما با استانداردهای جهانی بانکی محافظت می‌شود.", color: "text-primary", bg: "bg-primary/10" },
+              { icon: Zap, title: "رزرو فوری", desc: "واچر هتل بلافاصله پس از پرداخت به صورت خودکار صادر می‌گردد.", color: "text-blue-500", bg: "bg-blue-500/10" },
+              { icon: Headphones, title: "همیشه همراه", desc: "تیم پشتیبانی ما در تمامی مراحل سفر در کنار شما خواهد بود.", color: "text-orange-500", bg: "bg-orange-500/10" },
+              { icon: TrendingUp, title: "کمترین نرخ", desc: "ما تضمین می‌کنیم که بهترین قیمت موجود در بازار را ارائه می‌دهیم.", color: "text-purple-500", bg: "bg-purple-500/10" }
+            ].map((item, idx) => (
+              <div key={idx} className="flex flex-col items-center text-center">
+                <div className={cn("w-20 h-20 rounded-[2rem] flex items-center justify-center mb-8 transform transition-transform hover:rotate-6", item.bg)}>
+                  <item.icon className={cn("h-10 w-10", item.color)} />
                 </div>
-                <h3 className="text-xl font-bold mb-3">امنیت پرداخت</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  تمامی تراکنش‌ها در بستر امن و با تضمین بازگشت وجه در صورت کنسلی طبق قوانین انجام می‌شود.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-none shadow-none bg-transparent">
-              <CardContent className="pt-0 flex flex-col items-center text-center">
-                <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-6 transform -rotate-3 hover:rotate-0 transition-transform">
-                  <Zap className="h-8 w-8 text-blue-500" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">رزرو آنی</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  تایید رزرو شما در کمتر از یک دقیقه و صدور واچر آنی بدون نیاز به تایید دستی.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-none shadow-none bg-transparent">
-              <CardContent className="pt-0 flex flex-col items-center text-center">
-                <div className="w-16 h-16 rounded-2xl bg-orange-500/10 flex items-center justify-center mb-6 transform rotate-6 hover:rotate-0 transition-transform">
-                  <Headphones className="h-8 w-8 text-orange-500" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">پشتیبانی ۲۴ ساعته</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  تیم پشتیبانی ما در تمام روزهای هفته، حتی ایام تعطیل، پاسخگوی سوالات شماست.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-none shadow-none bg-transparent">
-              <CardContent className="pt-0 flex flex-col items-center text-center">
-                <div className="w-16 h-16 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-6 transform -rotate-6 hover:rotate-0 transition-transform">
-                  <TrendingUp className="h-8 w-8 text-purple-500" />
-                </div>
-                <h3 className="text-xl font-bold mb-3">بهترین نرخ بازار</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  ما همواره تلاش می‌کنیم با حذف واسطه‌ها، کمترین قیمت ممکن را برای هتل‌ها ارائه دهیم.
-                </p>
-              </CardContent>
-            </Card>
+                <h3 className="text-2xl font-black mb-4">{item.title}</h3>
+                <p className="text-muted-foreground font-medium leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/80" />
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-primary-foreground/10 rounded-full blur-3xl" />
+      <section className="py-32 relative overflow-hidden bg-slate-950">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/80 to-primary/60 opacity-90" />
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/20 rounded-full blur-[100px]" />
 
-        <div className="container mx-auto px-4 relative z-10 text-center">
-          <h2 className="text-3xl md:text-4xl font-black text-primary-foreground mb-6">
-            سفر رویایی شما از اینجا شروع می‌شود
+        <div className="container mx-auto px-4 relative z-10 text-center text-white">
+          <h2 className="text-4xl md:text-6xl font-black mb-8">
+            همین امروز سفر خود را آغاز کنید
           </h2>
-          <p className="text-lg text-primary-foreground/90 mb-10 max-w-2xl mx-auto font-medium">
-            همین حالا عضو خانواده بزرگ یورزرو شوید و از تخفیف‌های ویژه اولین سفر خود بهره‌مند شوید.
+          <p className="text-xl md:text-2xl mb-12 max-w-2xl mx-auto font-medium opacity-90 leading-relaxed">
+            با ثبت نام در یورزرو، از تخفیف‌های ویژه اعضا و پیشنهادات اختصاصی هتل‌ها بهره‌مند شوید.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="xl" variant="secondary" className="px-8 shadow-xl hover:scale-105 transition-transform" asChild>
-              <Link href="/auth/register">ساخت حساب کاربری رایگان</Link>
+          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+            <Button size="xl" variant="secondary" className="px-10 rounded-2xl shadow-2xl hover:scale-105 transition-transform font-black" asChild>
+              <Link href="/auth/register">عضویت رایگان</Link>
             </Button>
             <Button
               size="xl"
               variant="outline"
-              className="px-8 bg-white/10 border-white/20 text-primary-foreground hover:bg-white hover:text-primary backdrop-blur-sm transition-all"
+              className="px-10 rounded-2xl bg-white/10 border-white/30 text-white hover:bg-white hover:text-primary backdrop-blur-md transition-all font-black"
               asChild
             >
-              <Link href="/search">جستجوی هتل‌ها</Link>
+              <Link href="/search">جستجوی هوشمند</Link>
             </Button>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-muted/50 border-t py-12">
+      <footer className="bg-background border-t border-border/40 py-20">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <Link href="/" className="flex items-center gap-2 mb-4">
-                <div className="p-1.5 bg-primary rounded-lg">
-                  <Hotel className="h-5 w-5 text-primary-foreground" />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+            <div className="space-y-6">
+              <Link href="/" className="flex items-center gap-3">
+                <div className="p-2 bg-primary rounded-xl">
+                  <Hotel className="h-6 w-6 text-primary-foreground" />
                 </div>
-                <span className="text-lg font-bold">یورزرو</span>
+                <span className="text-2xl font-black tracking-tighter">یورزرو</span>
               </Link>
-              <p className="text-sm text-muted-foreground">
-                سامانه رزرو آنلاین هتل در سراسر ایران
+              <p className="text-muted-foreground font-medium leading-relaxed">
+                جامع‌ترین سامانه رزرواسیون هتل‌های ایران با اتصال مستقیم به سیستم‌های مرکزی هتلداری.
               </p>
             </div>
 
-            <div>
-              <h4 className="font-semibold mb-4">دسترسی سریع</h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <Link href="/search" className="text-muted-foreground hover:text-foreground">
-                    جستجوی هتل
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/dashboard" className="text-muted-foreground hover:text-foreground">
-                    پنل کاربری
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/about" className="text-muted-foreground hover:text-foreground">
-                    درباره ما
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">پشتیبانی</h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <Link href="/faq" className="text-muted-foreground hover:text-foreground">
-                    سوالات متداول
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/contact" className="text-muted-foreground hover:text-foreground">
-                    تماس با ما
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/terms" className="text-muted-foreground hover:text-foreground">
-                    قوانین و مقررات
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">تماس</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li dir="ltr" className="text-left">۰۲۱-۱۲۳۴۵۶۷۸</li>
-                <li dir="ltr" className="text-left">info@youreserve.ir</li>
-              </ul>
-            </div>
+            {[
+              { title: "دسترسی سریع", links: ["جستجوی هتل", "پنل کاربری", "درباره ما"] },
+              { title: "پشتیبانی", links: ["سوالات متداول", "تماس با ما", "قوانین"] },
+              { title: "تماس", links: ["۰۲۱-۱۲۳۴۵۶۷۸", "info@youreserve.ir"] }
+            ].map((col, i) => (
+              <div key={i}>
+                <h4 className="text-lg font-black mb-6">{col.title}</h4>
+                <ul className="space-y-4">
+                  {col.links.map((link, j) => (
+                    <li key={j}>
+                      <Link href="#" className="text-muted-foreground font-medium hover:text-primary transition-colors">{link}</Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
 
-          <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-            <p>تمامی حقوق محفوظ است - یورزرو {new Date().getFullYear()}</p>
+          <div className="border-t border-border/40 mt-16 pt-8 text-center text-sm font-bold text-muted-foreground">
+            <p>تمامی حقوق این وب‌سایت متعلق به یورزرو می‌باشد - {new Date().getFullYear()}</p>
           </div>
         </div>
       </footer>
