@@ -65,7 +65,13 @@ function isSameDay(a: Date, b: Date) {
 }
 
 function isDateBefore(a: Date, b: Date) {
-  return a < b && !isSameDay(a, b)
+  return a.getTime() < b.getTime() && !isSameDay(a, b)
+}
+
+function addDays(date: Date, days: number): Date {
+  const result = new Date(date)
+  result.setDate(result.getDate() + days)
+  return result
 }
 
 /**
@@ -139,9 +145,20 @@ function JalaliMonthView({
           const gDate = jalaliToGregorian(jYear, jMonth, jd)
           const isToday =
             jYear === today.jy && jMonth === today.jm && jd === today.jd
-          const isDisabled = minDate
-            ? isDateBefore(gDate, minDate) && !isSameDay(gDate, minDate)
+
+          // Disable past dates
+          let isDisabled = minDate
+            ? isDateBefore(gDate, minDate)
             : false
+
+          // If checkIn is selected, disable dates before checkIn + 1 day for checkout
+          if (selected.from && !selected.to) {
+             const minCheckout = addDays(selected.from, 1)
+             if (isDateBefore(gDate, minCheckout)) {
+                 // We don't disable them here because the user might want to change checkIn
+                 // But we visually distinguish them or handle in click
+             }
+          }
 
           const isStart = selected.from && isSameDay(gDate, selected.from)
           const isEnd = selected.to && isSameDay(gDate, selected.to)
@@ -285,15 +302,18 @@ export function JalaliDateRangePicker({
   const handleDayClick = useCallback(
     (date: Date) => {
       if (!checkIn || (checkIn && checkOut)) {
-        // Start fresh selection
+        // Start fresh selection (Check-in)
         onChange(date, undefined)
       } else {
-        // Second click: set end date
-        if (isDateBefore(date, checkIn)) {
-          onChange(date, checkIn)
-        } else if (isSameDay(date, checkIn)) {
+        // Second click: set end date (Check-out)
+        if (isSameDay(date, checkIn)) {
+          // Deselect if clicking the same day
           onChange(undefined, undefined)
+        } else if (isDateBefore(date, checkIn)) {
+          // If clicked date is before checkIn, make it the new checkIn
+          onChange(date, undefined)
         } else {
+          // Standard check-out selection
           onChange(checkIn, date)
           setOpen(false)
         }
