@@ -104,21 +104,53 @@ export default async function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-primary/5 via-background to-background py-16 md:py-24">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center mb-10">
-            <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4 text-balance">
-              رزرو آنلاین هتل در سراسر ایران
+      <section className="relative min-h-[70vh] flex items-center pt-20 pb-32 overflow-hidden">
+        {/* Animated Background */}
+        <div className="absolute inset-0 bg-slate-950">
+            <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-transparent to-slate-950" />
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/30 rounded-full blur-[120px] animate-pulse" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/20 rounded-full blur-[120px] animate-pulse delay-700" />
+            <Image
+                src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=2070"
+                alt="Luxury Hotel"
+                fill
+                className="object-cover opacity-40 mix-blend-overlay"
+                priority
+            />
+        </div>
+
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-4xl mx-auto text-center mb-16">
+            <Badge className="mb-6 bg-primary/20 text-primary border-primary/30 py-1.5 px-4 rounded-full text-sm font-bold backdrop-blur-md">
+                ✨ بهترین سامانه رزرو هتل در سال ۱۴۰۳
+            </Badge>
+            <h1 className="text-4xl md:text-7xl font-black text-white mb-6 leading-tight tracking-tight text-balance">
+              تجربه اقامتی <span className="text-primary italic">رویایی</span> در سراسر ایران
             </h1>
-            <p className="text-lg text-muted-foreground text-pretty">
-              بهترین قیمت‌ها، امکانات رفاهی عالی و پشتیبانی ۲۴ ساعته.
-              سفر خود را با یورزرو شروع کنید.
+            <p className="text-xl md:text-2xl text-slate-300 font-medium max-w-2xl mx-auto text-pretty">
+              با یورزرو، در کوتاه‌ترین زمان و با کمترین قیمت، بهترین هتل‌های ایران را رزرو کنید.
             </p>
           </div>
 
           {/* Search Form */}
-          <div className="max-w-5xl mx-auto">
-            <SearchForm variant="hero" />
+          <div className="relative group">
+            <div className="absolute -inset-4 bg-primary/20 rounded-[3rem] blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <SearchForm variant="home" />
+          </div>
+
+          <div className="mt-12 flex flex-wrap justify-center gap-8 md:gap-16 opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
+             <div className="flex items-center gap-2 text-white">
+                <ShieldCheck className="h-6 w-6 text-primary" />
+                <span className="font-bold">تضمین امنیت</span>
+             </div>
+             <div className="flex items-center gap-2 text-white">
+                <Zap className="h-6 w-6 text-primary" />
+                <span className="font-bold">تایید آنی</span>
+             </div>
+             <div className="flex items-center gap-2 text-white">
+                <Headphones className="h-6 w-6 text-primary" />
+                <span className="font-bold">پشتیبانی دائمی</span>
+             </div>
           </div>
         </div>
       </section>
